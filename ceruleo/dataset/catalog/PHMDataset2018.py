@@ -27,6 +27,8 @@ COMPRESSED_FILE = "phm_data_challenge_2018.tar.gz"
 FOLDER = "phm_data_challenge_2018"
 
 
+#TODO: Update with an URL where there is a zip file containing both the
+# training and test data
 URL = "https://drive.google.com/uc?id=15Jx9Scq9FqpIGn8jbAQB_lcHSXvIoPzb"
 OUTPUT = COMPRESSED_FILE
 
