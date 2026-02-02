@@ -1,3 +1,4 @@
+import ipdb
 import logging
 import os
 from pathlib import Path
@@ -96,9 +97,11 @@ class DatasetBuilder:
                 "This method is only available for FailureDataCycleSplitter"
             )
 
-        common_path_prefix = os.path.commonprefix(
-            [data for data, fault in data_fault_pairs]
-        )
+        # common_path_prefix = os.path.commonprefix(
+        #     [data for data, fault in data_fault_pairs]
+        # )
+
+        common_path_prefix = os.path.commonprefix(data_fault_pairs[0])
 
         for i, (data, fault) in enumerate(tqdm(data_fault_pairs)):
             df_data = self.dataframe_loader(data)

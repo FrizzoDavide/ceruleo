@@ -1,3 +1,4 @@
+import ipdb
 from abc import ABC, abstractmethod
 from typing import Iterator
 
@@ -160,6 +161,8 @@ class FailureDataCycleSplitter(CyclesSplitter):
 
         fault = fault.drop_duplicates(subset=[self.fault_time_column]).copy()
         fault["fault_number"] = range(fault.shape[0])
+        # if fault.loc[0,"Tool"] == "01M04":
+        #     ipdb.set_trace()
         return pd.merge_asof(
             data,
             fault,

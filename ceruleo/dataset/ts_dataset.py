@@ -1,3 +1,4 @@
+import ipdb
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -384,8 +385,6 @@ class PDMDataset(AbstractPDMDataset):
     def __init__(self, path: Path, rul_column: str = "RUL"):
         super().__init__()
         self.dataset_path = path
-        self.procesed_path = self.dataset_path / "processed" / "cycles"
-        self.cycles_table_filename = self.procesed_path / "cycles.csv"
         self._prepare_dataset()
         self.cycles_metadata = pd.read_csv(self.cycles_table_filename)
         self._rul_column = rul_column

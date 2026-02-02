@@ -151,10 +151,12 @@ class PHMDataset2018(PDMDataset):
         self.failure_types = failure_types
         self.tools = tools
         self.train = train
+        self.dataset_path = path / "phm_data_challenge_2018"
         self.procesed_path = self.dataset_path / "processed" / "train_cycles" if self.train else self.dataset_path / "processed" / "test_cycles"
-        self.dataset_path = path
+        self.cycles_table_filename = self.procesed_path / "cycles.csv"
 
         super().__init__(path / "phm_data_challenge_2018", "RUL")
+        self.dataset_path = path
 
         if self.failure_types is not None:
             if not isinstance(self.failure_types, list):
@@ -170,10 +172,11 @@ class PHMDataset2018(PDMDataset):
             if not isinstance(self.tools, list):
                 self.tools = [tools]
 
-            if self.train:
-                assert set(self.tools).issubset(PHM_TOOLS), f"Some of the tools defined in {self.tools} are not available. Available tools are {PHM_TOOLS}"
-            else:
-                assert set(self.tools).issubset(PHM_TEST_TOOLS), f"Some of the tools defined in {self.tools} are not available for the test set. Available test tools are {PHM_TEST_TOOLS}"
+            #TODO: Review the assert → the tool names are WITHOUT THE UNDERSCORE
+            # if self.train:
+            #     assert set(self.tools).issubset(PHM_TOOLS), f"Some of the tools defined in {self.tools} are not available. Available tools are {PHM_TOOLS}"
+            # else:
+            #     assert set(self.tools).issubset(PHM_TEST_TOOLS), f"Some of the tools defined in {self.tools} are not available for the test set. Available test tools are {PHM_TEST_TOOLS}"
 
             self.cycles_metadata = self.cycles_metadata[self.cycles_metadata["Tool"].isin(self.tools)]
 
