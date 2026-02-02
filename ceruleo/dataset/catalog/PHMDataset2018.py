@@ -67,6 +67,8 @@ class FailureType(Enum):
                 return f
         return None
 
+#TODO: Add somewhere an exception in case the list of strings passed to
+# `tools` is not correct
 
 class PHMDataset2018(PDMDataset):
     """PHM 2018 Dataset
