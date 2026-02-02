@@ -374,16 +374,16 @@ class FoldedDataset(AbstractPDMDataset):
 
 
 class PDMDataset(AbstractPDMDataset):
-    dataset_path: Path 
-    procesed_path: Path 
-    cycles_table_filename: Path 
+    dataset_path: Path
+    procesed_path: Path
+    cycles_table_filename: Path
     cycles_metadata: pd.DataFrame
     _rul_column: str
 
 
     def __init__(self, path: Path, rul_column: str = "RUL"):
         super().__init__()
-        self.dataset_path = path        
+        self.dataset_path = path
         self.procesed_path = self.dataset_path / "processed" / "cycles"
         self.cycles_table_filename = self.procesed_path / "cycles.csv"
         self._prepare_dataset()

@@ -40,6 +40,39 @@ def download(url: str, path: Path):
     logger.info("Downloading dataset...")
     gdown.download(url, str(path / OUTPUT), quiet=False)
 
+def get_key_from_filename(filename: str) -> str:
+    return "_".join(filename.split("_")[0:2])
+
+PHM_TOOLS = [
+    "01M01",
+    "01M02",
+    "02M01",
+    "02M02",
+    "03M01",
+    "03M02",
+    "04M01",
+    "04M02",
+    "05M01",
+    "05M02",
+    "06M01",
+    "06M02",
+    "07M01",
+    "07M02",
+    "08M01",
+    "08M02",
+    "09M01",
+    "09M02",
+    "10M01",
+    "10M02",
+]
+
+PHM_TEST_TOOLS = [
+    "01_M02",
+    "02_M02",
+    "03_M01",
+    "04_M01",
+    "06_M01",
+]
 
 class FailureType(Enum):
     """Failure types availables for the dataset.
@@ -67,9 +100,6 @@ class FailureType(Enum):
                 return f
         return None
 
-#TODO: Add somewhere an exception in case the list of strings passed to
-# `tools` is not correct
-
 class PHMDataset2018(PDMDataset):
     """PHM 2018 Dataset
 
@@ -94,10 +124,12 @@ class PHMDataset2018(PDMDataset):
     )
     ```
 
-
-
     Parameters:
-        path: Path where the dataset is located
+        path: Path where the dataset is located, by default DATA_PATH
+        url: url containing the data in a zip file, by default URL
+        failure_types: failure type to consider, by default None
+        tools: phm tools (i.e ion milling machines) to consider, by default None
+        train: boolean flag to decide weather to load the trainig or test data, by default True
     """
 
     failure_types: Optional[List[FailureType]]
@@ -109,16 +141,19 @@ class PHMDataset2018(PDMDataset):
         url: str = URL,
         failure_types: Optional[Union[FailureType, List[FailureType]]] = None,
         tools: Optional[Union[str, List[str]]] = None,
+        train: bool = True
     ):
         self.url = url
         super().__init__(path / "phm_data_challenge_2018", "RUL")
         self._prepare_dataset()
         self.failure_types = failure_types
         self.tools = tools
+        self.train = train
 
         if self.failure_types is not None:
             if not isinstance(self.failure_types, list):
                 self.failure_types = [failure_types]
+
             self.cycles_metadata = self.cycles_metadata[
                 self.cycles_metadata["Fault name"].isin(
                     [f.value for f in self.failure_types]
@@ -128,24 +163,26 @@ class PHMDataset2018(PDMDataset):
         if self.tools is not None:
             if not isinstance(self.tools, list):
                 self.tools = [tools]
-            self.cycles_metadata = self.cycles_metadata[
-                self.cycles_metadata["Tool"].isin(self.tools)
-            ]
 
-    def _prepare_dataset(self):
-        if self.cycles_table_filename.is_file():
-            return
-        if not (self.dataset_path / "raw" / "train").is_dir():
-            self.prepare_raw_dataset()
-        files = list(Path(self.dataset_path / "raw" / "train").resolve().glob("*.csv"))
-        faults_files = list(
-            Path(self.dataset_path / "raw" / "train" / "train_faults")
-            .resolve()
-            .glob("*.csv")
-        )
+            if self.train:
+                assert set(self.tools).issubset(PHM_TOOLS), f"Some of the tools defined in {self.tools} are not available. Available tools are {PHM_TOOLS}"
+            else:
+                assert set(self.tools).issubset(PHM_TEST_TOOLS), f"Some of the tools defined in {self.tools} are not available for the test set. Available test tools are {PHM_TEST_TOOLS}"
 
-        def get_key_from_filename(filename: str) -> str:
-            return "_".join(filename.split("_")[0:2])
+            self.cycles_metadata = self.cycles_metadata[self.cycles_metadata["Tool"].isin(self.tools)]
+
+    def _extract_lifes(
+        self,
+        files: list,
+        faults_files: list
+    ):
+        """
+        Extract lifes from the raw data
+
+        Args:
+            files: list of csv files containing the raw sensor data
+            faults_files: list of csv files containingt the fault times for each tool
+        """
 
         fault_files_map = {get_key_from_filename(f.name): f for f in faults_files}
         data_fault_pairs = [
@@ -172,6 +209,35 @@ class PHMDataset2018(PDMDataset):
                 data_fault_pairs,
             )
         )
+
+    def _prepare_dataset(self):
+
+        if self.cycles_table_filename.is_file():
+            return
+
+        if not (self.dataset_path / "raw" / "train").is_dir():
+            self.prepare_raw_dataset()
+
+        if self.train:
+
+            files = list(Path(self.dataset_path / "raw" / "train").resolve().glob("*.csv"))
+            faults_files = list(
+                Path(self.dataset_path / "raw" / "train" / "train_faults")
+                .resolve()
+                .glob("*.csv")
+            )
+
+        else:
+
+            files = list(Path(self.dataset_path / "raw" / "test").resolve().glob("*.csv"))
+            faults_files = list(
+                Path(self.dataset_path / "raw" / "test" / "test_faults")
+                .resolve()
+                .glob("*.csv")
+            )
+
+        self._extract_lifes(files=files,faults_files=faults_files)
+
 
     def prepare_raw_dataset(self):
         """Download and unzip the raw files
@@ -206,9 +272,10 @@ class PHMDataset2018(PDMDataset):
                 tar.extractall(path, members, numeric_owner=numeric_owner)
 
             safe_extract(tarball, path=path, members=track_progress(tarball))
-        shutil.move(
-            str(path / "phm_data_challenge_2018" / "train"), str(path / "train")
-        )
+
+        shutil.move(str(path / "phm_data_challenge_2018" / "train"), str(path / "train"))
         shutil.move(str(path / "phm_data_challenge_2018" / "test"), str(path / "test"))
+        shutil.move(str(path / "phm_data_challenge_2018" / "test_after"), str(path / "test_after"))
+        shutil.move(str(path / "phm_data_challenge_2018" / "test_concat"), str(path / "test_concat"))
         shutil.rmtree(str(path / "phm_data_challenge_2018"))
         (path / OUTPUT).unlink()
