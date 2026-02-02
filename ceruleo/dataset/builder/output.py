@@ -78,13 +78,18 @@ class DatasetFormat(Enum):
 class LocalStorageOutputMode(OutputMode):
     output_path: Path
     output_format: DatasetFormat
+    train: bool
 
     def __init__(
-        self, output_path: Path, output_format: DatasetFormat = DatasetFormat.CSV
+        self,
+        output_path: Path,
+        output_format: DatasetFormat = DatasetFormat.CSV,
+        train: bool = True
     ):
         super().__init__()
         self.output_path = output_path
         self.output_format = output_format
+        self.train = train
 
     def extract_metadata(self, cycle_id: str, df: pd.DataFrame) -> dict:
         df = super().extract_metadata(cycle_id, df)
@@ -92,15 +97,22 @@ class LocalStorageOutputMode(OutputMode):
         return df
 
     def get_output_path(self, cycle_id: str, df: pd.DataFrame) -> Path:
+
+        output_path = self.output_path / "processed"
+
+        if self.train:
+            output_path = output_path / "train_cycles"
+        else:
+            output_path = output_path / "test_cycles"
+
         return (
-            self.output_path
-            / "processed"
-            / "cycles"
+            output_path
             / f"{cycle_id}.{self.output_format.value}"
         )
 
     def store_cycle(self, cycle_id: str, df: pd.DataFrame):
-        output_cycles_path = self.output_path / "processed" / "cycles"
+        processed_cycles_path = self.output_path / "processed"
+        output_cycles_path = processed_cycles_path / "train_cycles" if self.train else processed_cycles_path / "test_cycles"
         if not output_cycles_path.exists():
             logger.info(f"Creating {output_cycles_path}")
             output_cycles_path.mkdir(exist_ok=True, parents=True)
@@ -119,7 +131,8 @@ class LocalStorageOutputMode(OutputMode):
         )
 
     def finish(self):
-        output_cycles_path = self.output_path / "processed" / "cycles"
+        processed_cycles_path = self.output_path / "processed"
+        output_cycles_path = processed_cycles_path / "train_cycles" if self.train else processed_cycles_path / "test_cycles"
         pd.DataFrame(self.cycles_metadata).T.to_csv(output_cycles_path / "cycles.csv")
 
     def build_dataset(self, builder: "DatasetBuilder") -> PDMDataset:

@@ -135,6 +135,7 @@ class PHMDataset2018(PDMDataset):
     failure_types: Optional[List[FailureType]]
     tools: Optional[List[str]]
 
+
     def __init__(
         self,
         path: Path = DATA_PATH,
@@ -144,11 +145,14 @@ class PHMDataset2018(PDMDataset):
         train: bool = True
     ):
         self.url = url
-        super().__init__(path / "phm_data_challenge_2018", "RUL")
-        self._prepare_dataset()
         self.failure_types = failure_types
         self.tools = tools
         self.train = train
+
+        super().__init__(path / "phm_data_challenge_2018", "RUL")
+        self._prepare_dataset()
+
+        self.procesed_path = self.dataset_path / "processed" / "train_cycles" if self.train else self.dataset_path / "processed" / "test_cycles"
 
         if self.failure_types is not None:
             if not isinstance(self.failure_types, list):
@@ -199,7 +203,9 @@ class PHMDataset2018(PDMDataset):
             .set_rul_column_method(NumberOfRowsRULColumn())
             .set_output_mode(
                 LocalStorageOutputMode(
-                    self.dataset_path, output_format=DatasetFormat.PARQUET
+                    output_path = self.dataset_path,
+                    output_format=DatasetFormat.PARQUET,
+                    train = self.train
                 ).set_metadata_columns(
                     {"Tool": "Tool_data", "Fault name": "fault_name"}
                 )
