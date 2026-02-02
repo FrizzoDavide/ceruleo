@@ -1,3 +1,4 @@
+import ipdb
 import gzip
 import io
 import logging
@@ -5,6 +6,7 @@ import os
 import pickle
 import shutil
 import tarfile
+import zipfile
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Union
@@ -24,6 +26,7 @@ from ceruleo.dataset.ts_dataset import AbstractPDMDataset, PDMDataset
 logger = logging.getLogger(__name__)
 
 COMPRESSED_FILE = "phm_data_challenge_2018.tar.gz"
+ZIP_COMPRESSED_FILE = "phm_data_challenge_2018.zip"
 FOLDER = "phm_data_challenge_2018"
 
 
@@ -33,7 +36,7 @@ FOLDER = "phm_data_challenge_2018"
 #NOTE: New link
 URL = "https://drive.google.com/uc?id=19e5OjnLY8gKXChzVBqPgRtJzq4TxVZy7"
 
-OUTPUT = COMPRESSED_FILE
+OUTPUT = ZIP_COMPRESSED_FILE
 
 
 def download(url: str, path: Path):
@@ -150,7 +153,6 @@ class PHMDataset2018(PDMDataset):
         self.train = train
 
         super().__init__(path / "phm_data_challenge_2018", "RUL")
-        self._prepare_dataset()
 
         self.procesed_path = self.dataset_path / "processed" / "train_cycles" if self.train else self.dataset_path / "processed" / "test_cycles"
 
@@ -258,30 +260,50 @@ class PHMDataset2018(PDMDataset):
 
         path = self.dataset_path / "raw"
         path.mkdir(parents=True, exist_ok=True)
-        if not (path / OUTPUT).resolve().is_file():
+        archive_path = path / OUTPUT
+        if not (archive_path).resolve().is_file():
             download(self.url, path)
-        logger.info("Decompressing  dataset...")
-        with tarfile.open(path / OUTPUT, "r") as tarball:
 
-            def is_within_directory(directory, target):
-                abs_directory = os.path.abspath(directory)
-                abs_target = os.path.abspath(target)
-                prefix = os.path.commonprefix([abs_directory, abs_target])
-                return prefix == abs_directory
+        is_zip = zipfile.is_zipfile(archive_path)
 
-            def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
-                for member in tar.getmembers():
-                    member_path = os.path.join(path, member.name)
-                    if not is_within_directory(path, member_path):
-                        raise Exception("Attempted Path Traversal in Tar File")
+        if is_zip:
 
-                tar.extractall(path, members, numeric_owner=numeric_owner)
+            logger.info("Decompressing  dataset with zip...")
+            phm_dirname = "phm_data_challenge_2018_complete"
 
-            safe_extract(tarball, path=path, members=track_progress(tarball))
+            with zipfile.ZipFile(archive_path, "r") as zip_ref:
+                for member in zip_ref.namelist():
+                    if os.path.isabs(member) or ".." in member:
+                        raise Exception("Attempted Path Traversal in Zip File")
 
-        shutil.move(str(path / "phm_data_challenge_2018" / "train"), str(path / "train"))
-        shutil.move(str(path / "phm_data_challenge_2018" / "test"), str(path / "test"))
-        shutil.move(str(path / "phm_data_challenge_2018" / "test_after"), str(path / "test_after"))
-        shutil.move(str(path / "phm_data_challenge_2018" / "test_concat"), str(path / "test_concat"))
-        shutil.rmtree(str(path / "phm_data_challenge_2018"))
+                zip_ref.extractall(path)
+
+        else:
+
+            logger.info("Decompressing  dataset with tar...")
+            phm_dirname = "phm_data_challenge_2018"
+
+            with tarfile.open(path / OUTPUT, "r") as tarball:
+
+                def is_within_directory(directory, target):
+                    abs_directory = os.path.abspath(directory)
+                    abs_target = os.path.abspath(target)
+                    prefix = os.path.commonprefix([abs_directory, abs_target])
+                    return prefix == abs_directory
+
+                def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+                    for member in tar.getmembers():
+                        member_path = os.path.join(path, member.name)
+                        if not is_within_directory(path, member_path):
+                            raise Exception("Attempted Path Traversal in Tar File")
+
+                    tar.extractall(path, members, numeric_owner=numeric_owner)
+
+                safe_extract(tarball, path=path, members=track_progress(tarball))
+
+        shutil.move(str(path / phm_dirname / "train"), str(path / "train"))
+        shutil.move(str(path / phm_dirname / "test"), str(path / "test"))
+        shutil.move(str(path / phm_dirname / "test_after"), str(path / "test_after"))
+        shutil.move(str(path / phm_dirname / "test_concat"), str(path / "test_concat"))
+        shutil.rmtree(str(path / phm_dirname))
         (path / OUTPUT).unlink()
