@@ -151,10 +151,10 @@ class PHMDataset2018(PDMDataset):
         self.failure_types = failure_types
         self.tools = tools
         self.train = train
+        self.procesed_path = self.dataset_path / "processed" / "train_cycles" if self.train else self.dataset_path / "processed" / "test_cycles"
+        self.dataset_path = path
 
         super().__init__(path / "phm_data_challenge_2018", "RUL")
-
-        self.procesed_path = self.dataset_path / "processed" / "train_cycles" if self.train else self.dataset_path / "processed" / "test_cycles"
 
         if self.failure_types is not None:
             if not isinstance(self.failure_types, list):
