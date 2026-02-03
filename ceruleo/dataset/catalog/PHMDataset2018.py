@@ -70,11 +70,11 @@ PHM_TOOLS = [
 ]
 
 PHM_TEST_TOOLS = [
-    "01_M02",
-    "02_M02",
-    "03_M01",
-    "04_M01",
-    "06_M01",
+    "01M02",
+    "02M02",
+    "03M01",
+    "04M01",
+    "06M01",
 ]
 
 class FailureType(Enum):
@@ -172,11 +172,10 @@ class PHMDataset2018(PDMDataset):
             if not isinstance(self.tools, list):
                 self.tools = [tools]
 
-            #TODO: Review the assert → the tool names are WITHOUT THE UNDERSCORE
-            # if self.train:
-            #     assert set(self.tools).issubset(PHM_TOOLS), f"Some of the tools defined in {self.tools} are not available. Available tools are {PHM_TOOLS}"
-            # else:
-            #     assert set(self.tools).issubset(PHM_TEST_TOOLS), f"Some of the tools defined in {self.tools} are not available for the test set. Available test tools are {PHM_TEST_TOOLS}"
+            if self.train:
+                assert set(self.tools).issubset(PHM_TOOLS), f"Some of the tools defined in {self.tools} are not available. Available tools are {PHM_TOOLS}"
+            else:
+                assert set(self.tools).issubset(PHM_TEST_TOOLS), f"Some of the tools defined in {self.tools} are not available for the test set. Available test tools are {PHM_TEST_TOOLS}"
 
             self.cycles_metadata = self.cycles_metadata[self.cycles_metadata["Tool"].isin(self.tools)]
 
