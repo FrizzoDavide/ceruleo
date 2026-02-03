@@ -34,7 +34,7 @@ FOLDER = "phm_data_challenge_2018"
 # URL = "https://drive.google.com/uc?id=15Jx9Scq9FqpIGn8jbAQB_lcHSXvIoPzb"
 
 #NOTE: New link
-URL = "https://drive.google.com/uc?id=19e5OjnLY8gKXChzVBqPgRtJzq4TxVZy7"
+URL = "https://drive.google.com/uc?id=1Cu04Lhd94A0NjjAVYHD8jR60Yao0MaWl"
 
 OUTPUT = ZIP_COMPRESSED_FILE
 
@@ -267,11 +267,11 @@ class PHMDataset2018(PDMDataset):
             download(self.url, path)
 
         is_zip = zipfile.is_zipfile(archive_path)
+        phm_dirname = "phm_data_challenge_2018"
 
         if is_zip:
 
             logger.info("Decompressing  dataset with zip...")
-            phm_dirname = "phm_data_challenge_2018_complete"
 
             with zipfile.ZipFile(archive_path, "r") as zip_ref:
                 for member in zip_ref.namelist():
@@ -283,7 +283,6 @@ class PHMDataset2018(PDMDataset):
         else:
 
             logger.info("Decompressing  dataset with tar...")
-            phm_dirname = "phm_data_challenge_2018"
 
             with tarfile.open(path / OUTPUT, "r") as tarball:
 
