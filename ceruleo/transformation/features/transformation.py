@@ -348,6 +348,31 @@ class Clip(TransformerStep):
         """
         return X.clip(self.lower, self.upper)
 
+class LinearDegradation(TransformerStep):
+    """
+    Transform the RUL using the linear degradation model.
+    The RUL should start from the length of the input RUL signal
+    and decrease down to 0.
+
+    Example: If I have a signal 1000 samples long the transformer
+    RUL should be [1000,999,998,...,0]
+    """
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """
+        Transform the input RUL using the linear degradation model.
+
+        Parameters:
+            X: The input life
+
+        Returns:
+            Return a new DataFrame with the same index as the input with the linear degradation RUL
+        """
+
+        n_samples = len(X)
+        rul_values = list(range(n_samples - 1, -1, -1))
+
+        return pd.DataFrame(rul_values, index=X.index, columns=X.columns[:1])
 
 class SubstractLinebase(TransformerStep):
     """Subtract the values in the first row from all the rows in the input life"""
