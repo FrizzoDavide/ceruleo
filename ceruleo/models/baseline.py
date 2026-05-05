@@ -1,5 +1,6 @@
-from typing import Optional, Union
+from typing import Optional, Union, Tuple, List
 
+import ipdb
 import numpy as np
 from ceruleo.dataset.ts_dataset import AbstractPDMDataset
 from ceruleo.dataset.utils import iterate_over_target
@@ -57,6 +58,26 @@ class BaselineModel:
             output.append(y_pred)
         return np.concatenate(output)
 
+    def predict_lifes(self, ds: TransformedDataset) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+        """
+        Modification of the predict method to return separated
+        predictions and true values over the different lifes
+
+        Parameters:
+            ds: Dataset iterator from which obtain the true RUL
+
+        Returns:
+            y_pred, y_true (Tuple[List[np.ndarray], List[np.ndarray]): list of predictions and true values over the lifes
+        """
+
+        y_pred, y_true = [], []
+        for y in iterate_over_target(ds):
+            _, time = FittedLife.compute_time_feature(y, self.RUL_threshold)
+            pred = np.clip(self.fitted_RUL - time, 0, self.fitted_RUL)
+            y_pred.append(pred)
+            y_true.append(y)
+
+        return y_pred, y_true
 
 class FixedValueBaselineModel:
     """
