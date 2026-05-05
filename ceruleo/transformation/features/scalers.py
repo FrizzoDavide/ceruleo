@@ -2,6 +2,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+import ipdb
 from ceruleo.transformation import TransformerStep
 from ceruleo.transformation.features.tdigest import TDigest
 from ceruleo.transformation.utils import  QuantileEstimator
@@ -153,7 +154,7 @@ class MinMaxScaler(TransformerStep):
         if self.data_min is None:
             self.data_min = partial_data_min
             self.data_max = partial_data_max
-        else:
+
             self.data_min = pd.concat([self.data_min, partial_data_min], axis=1).min(
                 axis=1, skipna=True
             )
@@ -201,6 +202,59 @@ class MinMaxScaler(TransformerStep):
         if self.clip:
             X.clip(lower=self.min, upper=self.max, inplace=True)
         return X
+
+    def inverse_transform(self, X: Union[pd.DataFrame, np.ndarray]):
+        """
+        Undo the MinMax scaling.
+
+        Parameters:
+            X (Union[pd.Dataframe, np.ndarray]: Scaled input dataset. Can be either a pd.DataFrame
+               or a np.ndarray.
+
+        Returns:
+            Data restored to the original scale with the same type
+            as the input.
+        """
+
+        divisor = self.data_max - self.data_min
+        mask = np.abs(divisor) > 1e-25
+
+        # Case 1: Input is a pandas DataFrame
+        if isinstance(X, pd.DataFrame):
+
+            X_inv = X.astype(float).copy()
+
+            X_inv.loc[:, mask] = (
+                (X_inv.loc[:, mask] - self.min)
+                / (self.max - self.min)
+                * divisor[mask]
+            ) + self.data_min[mask]
+
+            return X_inv
+
+        # Case 2: Input is a numpy array
+        elif isinstance(X, np.ndarray):
+
+            # The y_pred and y_true arrays
+            # have shape (n_windows, sequence_length)
+            # we have to de normalize the RUL values in each
+            # window
+
+            X_inv = X.astype(float).copy()
+
+            for i in range(X_inv.shape[0]):
+                X_inv[i, :] = (
+                    (X_inv[i, :] - self.min)
+                    / (self.max - self.min)
+                    * divisor.values[0]
+                ) + self.data_min.values[0]
+
+            return X_inv
+
+        else:
+            raise TypeError(
+                f"Expected pd.DataFrame or np.ndarray, got {type(X)}"
+            )
 
     def description(self):
         data = super().description()
