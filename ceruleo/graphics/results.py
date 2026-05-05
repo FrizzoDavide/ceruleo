@@ -5,6 +5,7 @@ It is possible to visualize how it grows the unexploited lifetime grows as the c
 
 
 """
+import os
 import math
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -439,6 +440,9 @@ def plot_unexploited_lifetime(
     ax=None,
     units: Optional[str] = "",
     add_shade: bool = True,
+    save_plot: bool = False,
+    filename: str = "unexploited_lifetime.png",
+    plot_path: str = os.getcwd(),
     **kwargs,
 ):
     if ax is None:
@@ -454,6 +458,14 @@ def plot_unexploited_lifetime(
     ax.set_title("Unexploited lifetime")
     ax.set_xlabel("Fault window size" + units)
     ax.set_ylabel(units)
+
+    if save_plot:
+        plot_path = os.path.join(plot_path, filename)
+        plt.savefig(plot_path, bbox_inches="tight")
+        print("#" * 50)
+        print(f"Plot saved at: {plot_path}")
+        print("#" * 50)
+
     return ax
 
 
@@ -464,6 +476,9 @@ def plot_unexpected_breaks(
     ax: Optional[matplotlib.axes.Axes] = None,
     units: Optional[str] = "",
     add_shade: bool = True,
+    save_plot: bool = False,
+    filename: str = "unexpected_breaks.png",
+    plot_path: str = os.getcwd(),
     **kwargs,
 ) -> matplotlib.axes.Axes:
     """
@@ -493,9 +508,15 @@ def plot_unexpected_breaks(
     ax.set_xlabel("Fault window size" + units)
     ax.set_ylabel("Risk of breakage")
     ax.legend()
+    
+    if save_plot:
+        plot_path = os.path.join(plot_path, filename)
+        plt.savefig(plot_path, bbox_inches="tight")
+        print("#" * 50)
+        print(f"Plot saved at: {plot_path}")
+        print("#" * 50)
+
     return ax
-
-
 
 
 def plot_J_Cost(

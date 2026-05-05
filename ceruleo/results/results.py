@@ -32,6 +32,7 @@ import numpy as np
 from sklearn.metrics import mean_absolute_error as mae
 from sklearn.metrics import mean_absolute_percentage_error as mape
 from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import root_mean_squared_error as rmse
 from uncertainties import ufloat
 
 from ceruleo.results.picewise_regression import (
@@ -64,6 +65,7 @@ class PredictionResult:
     def compute_metrics(self):
         self.metrics.mae = mae(self.true_RUL, self.predicted_RUL)
         self.metrics.mse = mse(self.true_RUL, self.predicted_RUL)
+        self.metrics.rmse = rmse(self.true_RUL, self.predicted_RUL)
 
     def __post_init__(self):    
         self.true_RUL = np.squeeze(self.true_RUL)
