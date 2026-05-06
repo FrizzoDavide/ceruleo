@@ -24,6 +24,7 @@ Since usually the breakages are considered more harmful, a possible approach to 
 
 
 """
+import ipdb
 import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Union
@@ -218,12 +219,14 @@ class FittedLife:
             if isinstance(time, np.ndarray):
                 self.time = time
             else:
-                self.time = np.array(np.linspace(0, y_true[0], n=len(y_true)))
+                self.time = np.array(np.linspace(0, y_true[0], num=len(y_true)))
 
         else:
             self.degrading_start, self.time = FittedLife.compute_time_feature(
                 y_true, RUL_threshold
             )
+
+        ipdb.set_trace()
 
         # self.y_pred_fitted_picewise = self._fit_picewise_linear_regression(y_pred)
         # self.y_true_fitted_picewise = self._fit_picewise_linear_regression(y_true)
@@ -551,6 +554,7 @@ def unexpected_breaks_from_cv(
     std_per_window = []
     mean_per_window = []
     windows = np.linspace(0, window_size, n)
+    ipdb.set_trace()
     for m in windows:
         jj = []
         for r in lives:
@@ -561,7 +565,28 @@ def unexpected_breaks_from_cv(
     return windows, np.array(mean_per_window), np.array(std_per_window)
 
 
-def metric_J_from_cv(lives: List[List[FittedLife]], window_size: int, n: int, q1, q2):
+def metric_J_from_cv(
+        lives: List[List[FittedLife]],
+        window_size: int,
+        n: int,
+        q1: float,
+        q2: float
+) -> Tuple[np.ndarray, List[np.ndarray]]:
+    """
+    Compute the metric J (overall trade off cost between ub and ul) from cv results.
+
+    Args:
+        lives (List[List[FittedLife]]): lifes with cv results
+        window_isze (int): maximum maintenance window size
+        n (int): number of maintenance windows considered
+        q1 (float): cost for ub
+        q2 (float): cost for ul
+
+    Returns:
+        windows (np.ndarray): maintenance windows
+        J (List[np.ndarray]): metric J for the different windows and for the different lifes
+    """
+
     J = []
     windows = np.linspace(0, window_size, n)
     for m in windows:
@@ -579,9 +604,31 @@ def metric_J_from_cv(lives: List[List[FittedLife]], window_size: int, n: int, q1
     return windows, J
 
 
-def metric_J(d, window_size: int, step: int):
+def metric_J(
+        d: List[PredictionResult],
+        window_size: int,
+        step: int,
+        c_ub: float,
+        c_ul: float,
+):
+    """
+    Stub method for the J metric starting from prediction results on
+    different lifes
+
+    Args:
+        d (List[PredictionResult]): list of prediction results
+        window_isze (int): maximum maintenance window size
+        n (int): number of maintenance windows considered
+        c_ub (float): cost for ub
+        c_ul (float): cost for ul
+
+    Returns:
+        windows (np.ndarray): maintenance windows
+        J (List[np.ndarray]): metric J for the different windows and for the different lifes
+    """
+
     lives_cv = [split_lives(cv) for cv in d]
-    return metric_J_from_cv(lives_cv, window_size, step)
+    return metric_J_from_cv(lives_cv, window_size, step, c_ub, c_ul)
 
 
 def cv_regression_metrics_single_model(

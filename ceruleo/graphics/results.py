@@ -445,6 +445,23 @@ def plot_unexploited_lifetime(
     plot_path: str = os.getcwd(),
     **kwargs,
 ):
+    """
+    Plot the amount of unexploited lifetime with respect to the maintenance window
+
+    Parameters:
+        results_dict: Dictionary with the results
+        max_window: Maximum size of the maintenance windows
+        n: Number of points used to evaluate the window size
+        ax: axis on which to draw, by default None
+        units: Units to use in the xlabel, by default ""
+        add_shade: weather to add shape to represent the std
+        save_plot: boolean to decide weather to save the plot or not
+        filename: filename for the plot
+        plot_path: path where to save the plot
+    
+    Returns:
+        The axis in which the plot was made
+    """
     if ax is None:
         fig, ax = plt.subplots(**kwargs)
     n_models = len(results_dict)
@@ -490,7 +507,10 @@ def plot_unexpected_breaks(
         n: Number of points used to evaluate the window size
         ax: axis on which to draw, by default None
         units: Units to use in the xlabel, by default ""
-
+        save_plot: boolean to decide weather to save the plot or not
+        filename: filename for the plot
+        plot_path: path where to save the plot
+    
     Returns:
         The axis in which the plot was made
     """
@@ -527,7 +547,30 @@ def plot_J_Cost(
     ratio_min: float = 1 / 120,
     ratio_max: float = 1 / 5,
     ratio_n_points: int = 50,
+    save_plot: bool = False,
+    filename: str = "metric_J.png",
+    plot_path: str = os.getcwd(),
 ):
+    """
+    Plot the ratio between ub and ul for different values of the maintenance
+    window m.
+
+    Parameters:
+        results: Dictionary with the results
+        window: Maximum size of the maintenance windows
+        step: Number of points used to evaluate the window size
+        ax: axis on which to draw, by default None
+        ratio_min: minimum ratio to consider between c_ub and c_ul 
+        ratio_max: maximum ratio to consider between c_ub and c_ul 
+        ratio_n_points: ratio for n points
+        save_plot: boolean to decide weather to save the plot or not
+        filename: filename for the plot
+        plot_path: path where to save the plot
+
+    Returns:
+        The axis in which the plot was made
+    """
+
     def label_formatter(x):
         UB_c = 1 / x
         UL_c = 1
@@ -557,8 +600,6 @@ def plot_J_Cost(
             v.append(np.mean(unumpy.uarray(mean_ub, std_ub) * UB_c + unumpy.uarray(mean_ul, std_ul) * UL_c))
 
             labels.append(f"{int(UB_c)}:{UL_c}")
-
-      
   
         mean = unumpy.nominal_values(v)
         std = unumpy.std_devs(v)
@@ -573,6 +614,14 @@ def plot_J_Cost(
         "Ratio between UL and UB. How many minutes of UL are equal to 1 breakage"
     )
     ax.set_ylabel("J")
+
+    if save_plot:
+        plot_path = os.path.join(plot_path, filename)
+        plt.savefig(plot_path, bbox_inches="tight")
+        print("#" * 50)
+        print(f"Plot saved at: {plot_path}")
+        print("#" * 50)
+
     return ax
 
 
