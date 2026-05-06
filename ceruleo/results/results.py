@@ -226,8 +226,6 @@ class FittedLife:
                 y_true, RUL_threshold
             )
 
-        ipdb.set_trace()
-
         # self.y_pred_fitted_picewise = self._fit_picewise_linear_regression(y_pred)
         # self.y_true_fitted_picewise = self._fit_picewise_linear_regression(y_true)
 
@@ -411,6 +409,23 @@ class FittedLife:
         else:
             return 0
 
+    def excessive_life(self, m: float = 0) -> float:
+        """
+        Compute the amount of of excessive life estimated by the model
+        in case there is an overestimation of the RUL
+
+        Parameters:
+            m: Fault horizon window. Defaults to 0.
+
+        Returns:
+            Excessive life
+        """
+
+        if self.maintenance_point(m) > self.end_of_life():
+            return  self.maintenance_point(m) - self.end_of_life()
+        else:
+            return 0
+
     def unexpected_break(self, m: float = 0, tolerance: float = 0) -> bool:
         """
         Compute weather an unexpected break will produce using a fault horizon window of size m
@@ -489,14 +504,48 @@ def split_lives(
     return lives
 
 
-def unexploited_lifetime(d: PredictionResult, window_size: int, step: int):
+def unexploited_lifetime(
+        d: PredictionResult,
+        window_size: int,
+        step: int
+):
+    """
+    Compute the amount of unexploited lifetime with respect to the maintenance window size
+
+    Parameters:
+        d: Dictionary with the results
+        window_size: Maximum size of the maintenance windows
+        step: Number of points in which compute the risks.
+            step different maintenance windows will be used.
+
+    Returns:
+        A tuple of np.arrays with:
+            - Maintenance window size evaluated
+            - Unexploited lifetime computed for every window size used
+    """
+
     bb = [split_lives(cv) for cv in d]
     return unexploited_lifetime_from_cv(bb, window_size, step)
 
 
 def unexploited_lifetime_from_cv(
-    lives: List[List[FittedLife]], window_size: int, n: int
+    lives: List[List[FittedLife]],
+    window_size: int,
+    n: int
 ):
+    """
+    Compute the amount of unexploited lifetime given a Cross-Validation results
+
+    Parameters:
+        lives: Cross validation results.
+        window_size: Maximum size of the maintenance window
+        n: Number of points to evaluate the risk of unexpected breaks
+
+    Returns:
+        A tuple of np.arrays with:
+            - Maintenance window size evaluated
+            - Risk computed for every window size used
+    """
     std_per_window = []
     mean_per_window = []
     windows = np.linspace(0, window_size, n)
@@ -511,6 +560,61 @@ def unexploited_lifetime_from_cv(
 
     return windows, np.array(mean_per_window), np.array(std_per_window)
 
+def excessive_life(
+        d: PredictionResult,
+        window_size: int,
+        step: int
+):
+    """
+    Compute the amount of excessive life with respect to the maintenance window size
+
+    Parameters:
+        d: Dictionary with the results
+        window_size: Maximum size of the maintenance windows
+        step: Number of points in which compute the risks.
+            step different maintenance windows will be used.
+
+    Returns:
+        A tuple of np.arrays with:
+            - Maintenance window size evaluated
+            - Unexploited lifetime computed for every window size used
+    """
+
+    bb = [split_lives(cv) for cv in d]
+    return excessive_life_from_cv(bb, window_size, step)
+
+
+def excessive_life_from_cv(
+    lives: List[List[FittedLife]],
+    window_size: int,
+    n: int
+):
+    """
+    Compute the amount of excessive life given a Cross-Validation results
+
+    Parameters:
+        lives: Cross validation results.
+        window_size: Maximum size of the maintenance window
+        n: Number of points to evaluate the risk of unexpected breaks
+
+    Returns:
+        A tuple of np.arrays with:
+            - Maintenance window size evaluated
+            - Excessive life computed for every window size used
+    """
+    std_per_window = []
+    mean_per_window = []
+    windows = np.linspace(0, window_size, n)
+    for m in windows:
+        jj = []
+        for r in lives:
+            ul_cv_list = [life.excessive_life(m) for life in r]
+
+            jj.extend(ul_cv_list)
+        mean_per_window.append(np.mean(jj))
+        std_per_window.append(np.std(jj))
+
+    return windows, np.array(mean_per_window), np.array(std_per_window)
 
 def unexpected_breaks(
     d: List[PredictionResult], window_size: int, step: int
@@ -554,7 +658,6 @@ def unexpected_breaks_from_cv(
     std_per_window = []
     mean_per_window = []
     windows = np.linspace(0, window_size, n)
-    ipdb.set_trace()
     for m in windows:
         jj = []
         for r in lives:
@@ -569,8 +672,8 @@ def metric_J_from_cv(
         lives: List[List[FittedLife]],
         window_size: int,
         n: int,
-        q1: float,
-        q2: float
+        c_ub: float,
+        c_ul: float,
 ) -> Tuple[np.ndarray, List[np.ndarray]]:
     """
     Compute the metric J (overall trade off cost between ub and ul) from cv results.
@@ -579,8 +682,8 @@ def metric_J_from_cv(
         lives (List[List[FittedLife]]): lifes with cv results
         window_isze (int): maximum maintenance window size
         n (int): number of maintenance windows considered
-        q1 (float): cost for ub
-        q2 (float): cost for ul
+        c_ub (float): cost for ub
+        c_ul (float): cost for ul
 
     Returns:
         windows (np.ndarray): maintenance windows
@@ -593,9 +696,9 @@ def metric_J_from_cv(
         J_of_m = []
         for r in lives:
             ub_cv_list = np.array([life.unexpected_break(m) for life in r])
-            ub_cv_list = (ub_cv_list / (np.max(ub_cv_list) + 0.0000000001)) * q1
+            ub_cv_list = (ub_cv_list / (np.max(ub_cv_list) + 0.0000000001)) * c_ub
             ul_cv_list = np.array([life.unexploited_lifetime(m) for life in r])
-            ul_cv_list = (ul_cv_list / (np.max(ul_cv_list) + 0.0000000001)) * q2
+            ul_cv_list = (ul_cv_list / (np.max(ul_cv_list) + 0.0000000001)) * c_ul
             values = ub_cv_list + ul_cv_list
             mean_J = np.mean(values)
             std_ul_cv = np.std(values)
