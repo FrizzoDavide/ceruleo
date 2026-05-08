@@ -11,15 +11,22 @@ from ceruleo.dataset.transformed import TransformedDataset
 
 class BaselineModel:
     """
-    Predict the RUL using the mean or the median value of the duration of the dataset
+    Predict the RUL using the mean or the median value of the duration of the dataset.
+    If the quantile mode is used, passing a quantile level tau will use the tau-th
+    quantile of the dataset duration to predict the RUL
 
     Parameters:
-        mode: Method for computing the duration of the dataset. Possible values are: 'mean' and 'median'
+        mode: Method for computing the duration of the dataset. Possible values are: 'mean', 'median' and 'quantile'
+        RUL_threshold: RUL RUL_threshold, by default None
+        tau: quantile level to use for the quantile model
     """
 
-    def __init__(self, mode: str = "mean", RUL_threshold: Optional[float] = None):
+    def __init__(self, mode: str = "mean", RUL_threshold: Optional[float] = None, tau: float = 0.5):
+
         self.mode = mode
         self.RUL_threshold = RUL_threshold
+        self.tau = tau
+
 
     def fit(self, ds: Union[TransformedDataset, AbstractPDMDataset]):
         """Compute the mean or median RUL using the given dataset
@@ -40,6 +47,10 @@ class BaselineModel:
             self.fitted_RUL = np.mean(true)
         elif self.mode == "median":
             self.fitted_RUL = np.median(true)
+        elif self.mode == "quantile":
+            self.fitted_RUL = np.quantile(true, self.tau)
+        else:
+            raise ValueError(f"mode {self.mode} not supported")
 
     def predict(self, ds: TransformedDataset) -> np.ndarray:
         """
