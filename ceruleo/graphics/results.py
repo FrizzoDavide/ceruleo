@@ -514,7 +514,7 @@ def plot_unexpected_breaks(
         save_plot: boolean to decide weather to save the plot or not
         filename: filename for the plot
         plot_path: path where to save the plot
-    
+
     Returns:
         The axis in which the plot was made
     """
@@ -532,7 +532,7 @@ def plot_unexpected_breaks(
     ax.set_xlabel("Fault window size" + units)
     ax.set_ylabel("Risk of breakage")
     ax.legend()
-    
+
     if save_plot:
         plot_path = os.path.join(plot_path, filename)
         plt.savefig(plot_path, bbox_inches="tight")
@@ -596,15 +596,15 @@ def plot_J_Cost(
 
         labels = []
         from uncertainties import unumpy
-   
+
         for r in ratio:
             UB_c = 1.0
             UL_c = UB_c * r
-            
+
             v.append(np.mean(unumpy.uarray(mean_ub, std_ub) * UB_c + unumpy.uarray(mean_ul, std_ul) * UL_c))
 
             labels.append(f"{int(UB_c)}:{UL_c}")
-  
+
         mean = unumpy.nominal_values(v)
         std = unumpy.std_devs(v)
         ax.plot(ratio, mean, "-o", label=model_name, color=colors[i])
@@ -612,6 +612,7 @@ def plot_J_Cost(
 
     ticks = ax.get_xticks().tolist()
     ticks.append(ratio[0])
+    ax.legend()
     ax.set_xticks(ticks)
     ax.set_xticklabels([label_formatter(x) for x in ax.get_xticks()])
     ax.set_xlabel(
