@@ -443,6 +443,7 @@ def plot_unexploited_lifetime(
     save_plot: bool = False,
     filename: str = "unexploited_lifetime.png",
     plot_path: str = os.getcwd(),
+    log_scale: bool = False,
     **kwargs,
 ):
     """
@@ -458,7 +459,8 @@ def plot_unexploited_lifetime(
         save_plot: boolean to decide weather to save the plot or not
         filename: filename for the plot
         plot_path: path where to save the plot
-    
+        log_scale: whether to use logarithmic scale for the y-axis
+
     Returns:
         The axis in which the plot was made
     """
@@ -475,6 +477,8 @@ def plot_unexploited_lifetime(
     ax.set_title("Unexploited lifetime")
     ax.set_xlabel("Fault window size" + units)
     ax.set_ylabel(units)
+    if log_scale:
+        ax.set_yscale("log")
 
     if save_plot:
         plot_path = os.path.join(plot_path, filename)
