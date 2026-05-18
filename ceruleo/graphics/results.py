@@ -552,6 +552,7 @@ def plot_J_Cost(
     ratio_max: float = 1 / 5,
     ratio_n_points: int = 50,
     save_plot: bool = False,
+    log_scale: bool = False,
     filename: str = "metric_J.png",
     plot_path: str = os.getcwd(),
 ):
@@ -564,10 +565,11 @@ def plot_J_Cost(
         window: Maximum size of the maintenance windows
         step: Number of points used to evaluate the window size
         ax: axis on which to draw, by default None
-        ratio_min: minimum ratio to consider between c_ub and c_ul 
-        ratio_max: maximum ratio to consider between c_ub and c_ul 
+        ratio_min: minimum ratio to consider between c_ub and c_ul
+        ratio_max: maximum ratio to consider between c_ub and c_ul
         ratio_n_points: ratio for n points
         save_plot: boolean to decide weather to save the plot or not
+        log_scale: whether to use logarithmic scale for the y-axis
         filename: filename for the plot
         plot_path: path where to save the plot
 
@@ -619,6 +621,9 @@ def plot_J_Cost(
         "Ratio between UL and UB. How many minutes of UL are equal to 1 breakage"
     )
     ax.set_ylabel("J")
+
+    if log_scale:
+        ax.set_yscale("log")
 
     if save_plot:
         plot_path = os.path.join(plot_path, filename)
