@@ -4,11 +4,9 @@ from typing import List, Optional, Union
 import numpy as np
 import pandas as pd
 from ceruleo.transformation import TransformerStep
+import ipdb
 
 logger = logging.getLogger(__name__)
-
-
-
 
 
 class ByNameFeatureSelector(TransformerStep):
@@ -31,12 +29,15 @@ class ByNameFeatureSelector(TransformerStep):
         else:
             features = list(set(df.columns))
 
+        ipdb.set_trace()
+
         if len(self.features_computed_) == 0:
             self.features_computed_ = features
         else:
             self.features_computed_ = [
                 f for f in self.features_computed_ if f in features
             ]
+        ipdb.set_trace()
         return self
 
     def fit(self, df:pd.DataFrame, y=None):
