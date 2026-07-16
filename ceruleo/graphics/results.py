@@ -586,6 +586,7 @@ def plot_J_Cost(
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(17, 5))
+        fig, ax = plt.subplots()
 
     ratio = np.linspace(ratio_min, ratio_max, ratio_n_points)
     n_models = len(results)
