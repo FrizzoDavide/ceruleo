@@ -618,9 +618,7 @@ def plot_J_Cost(
     ax.legend()
     ax.set_xticks(ticks)
     ax.set_xticklabels([label_formatter(x) for x in ax.get_xticks()])
-    ax.set_xlabel(
-        "Ratio between UL and UB. How many minutes of UL are equal to 1 breakage"
-    )
+    ax.set_xlabel(r"$c_{ul} / {c_{ub}}$")
     ax.set_ylabel("J")
 
     if log_scale:
