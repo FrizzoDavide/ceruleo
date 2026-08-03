@@ -5,6 +5,7 @@ It is possible to visualize how it grows the unexploited lifetime grows as the c
 
 
 """
+import ipdb
 import os
 import math
 from typing import Dict, Iterable, List, Optional, Tuple, Union
@@ -469,10 +470,11 @@ def plot_unexploited_lifetime(
     n_models = len(results_dict)
     colors = sns.color_palette("hls", n_models)
     for i, model_name in enumerate(results_dict.keys()):
-        m, ulft, std_ul = unexploited_lifetime(results_dict[model_name], max_window, n)
-        ax.plot(m, ulft, label=model_name, color=colors[i])
+        print(f"model name: {model_name}")
+        m, mean_ul, std_ul = unexploited_lifetime(results_dict[model_name], max_window, n)
+        ax.plot(m, mean_ul, label=model_name, color=colors[i])
         if add_shade:
-            ax.fill_between(m, ulft+std_ul, ulft-std_ul, alpha=0.1, color=colors[i])
+            ax.fill_between(m, mean_ul+std_ul, mean_ul-std_ul, alpha=0.1, color=colors[i])
     ax.legend()
     ax.set_title("Unexploited lifetime")
     ax.set_xlabel("Fault window size" + units)
@@ -498,7 +500,7 @@ def plot_unexpected_breaks(
     units: Optional[str] = "",
     add_shade: bool = True,
     save_plot: bool = False,
-    filename: str = "unexpected_breaks.png",
+    filename: str = "unexpected_breaks.pdf",
     plot_path: str = os.getcwd(),
     **kwargs,
 ) -> matplotlib.axes.Axes:
@@ -514,6 +516,7 @@ def plot_unexpected_breaks(
         save_plot: boolean to decide weather to save the plot or not
         filename: filename for the plot
         plot_path: path where to save the plot
+        filetype: filetype for the produced plot
 
     Returns:
         The axis in which the plot was made
